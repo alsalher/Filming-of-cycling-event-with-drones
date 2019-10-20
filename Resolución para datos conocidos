@@ -1,0 +1,118 @@
+% Datos iniciales
+clear all
+close all
+clc
+%Matriz waypoints: X Y (KM). 1º la base
+XY=[0         0;   -12.5250   -0.8633;   -6.3472    1.1579;         0   -0.2431;    4.8967    4.0314;   10.8192    1.3528];
+%Matriz intervalos de tiempo. 1ª columna el wp
+int_wp=[1.0000   15.0000   35.0000;    2.0000   30.6000   50.6000;    3.0000   46.2000   66.2000;    4.0000   61.8000   81.8000;    5.0000   77.4000   97.4000];
+%Vida útil bateria (min)
+vu=30;
+%Velocidad lineal del dron [km/h]
+V=60;
+%Tiempo en cambiar la bateria [min]
+cb=0.5;
+
+[tviaje,dron_g,porcentaje_g,int_wp_final_g,t_g,p_g]=gridy(XY,int_wp,vu,V,cb);
+% [dron_s,porcentaje_s,int_wp_final_s,t_s,p_s]=sweeping_mod(XY,int_wp,vu,V,cb);
+[dron_s,porcentaje_s,int_wp_final_s,t_s,p_s]=sweeping_mod_consec(XY,int_wp,vu,V,cb);
+for i=1:dron_g
+    int_wp_final_g(:,:,i)
+    p_g(:,:,i)
+    t_g(:,:,i)
+end
+for i=1:dron_s
+    int_wp_final_s(:,:,i)
+    p_s(:,:,i)
+    t_s(:,:,i)
+end
+
+dron_g
+porcentaje_g
+dron_s
+porcentaje_s
+[n,m,z]=size(int_wp_final_g);
+[mg,ng,zg]=size(t_g);
+u=1;
+colores=[1 0 0;0 0 0;0 1 0;0 0 1;1 1 0;0.054901961	0.266666667	0.015686275;0.956862745	0.325490196	0.835294118;0.062745098	0.917647059
+	0.941176471;1	0.5	0];
+figure(1)
+for i=1:dron_g
+    k=1;
+    while k<=n && int_wp_final_g(k,1,i)~=0
+        x=[int_wp_final_g(k,2,i) int_wp_final_g(k,3,i)];
+        y=[int_wp_final_g(k,1,i)-0.05 int_wp_final_g(k,1,i)-0.05];
+        p(i)=plot(x,y,'color',colores(i,:),'linewidth',1.5);
+
+        hold on
+        k=k+1;
+    end
+    %Sacar los puntos en los que el dron vuelve a la base
+    for l=1:(mg-1)
+
+        g=ng;
+        flag_g=0;
+        while flag_g==0
+            if t_g(l,g,i)~=0 && g-1~=0
+                flag_g=1;
+                t_g(l,g-1,i)
+                p_g(l,g-1,i)
+                vuelta_base_g(u,:)=[t_g(l,g-1,i), p_g(l,g-1,i)-0.05]
+                u=u+1;
+            else
+                g=g-1;
+                if g==0
+                    flag_g=1;
+                end
+            end
+        end
+    end
+end
+x=vuelta_base_g(:,1);
+y=vuelta_base_g(:,2);
+plot(x,y,'*')
+
+[n,m,z]=size(int_wp_final_s);
+figure(1)
+u=1;
+[ms,ns,zs]=size(t_s);
+for i=1:dron_s
+    k=1;
+    while k<=n && int_wp_final_s(k,1,i)~=0
+        x=[int_wp_final_s(k,2,i) int_wp_final_s(k,3,i)];
+        y=[(int_wp_final_s(k,1,i)+0.05) (int_wp_final_s(k,1,i)+0.05)];
+        p(i)=plot(x,y,'color',colores(i,:),'linewidth',1.5)
+
+        hold on
+        k=k+1;
+    end
+    %Sacar los puntos en los que el dron vuelve a la base
+    for l=1:(ms-1)
+        g=ns;
+        flag_s=0;
+        while flag_s==0
+            if t_s(l,g,i)~=0 && g-1~=0
+                flag_s=1;
+                t_s(l,g-1,i)
+                p_s(l,g-1,i)
+                vuelta_base_s(u,:)=[t_s(l,g-1,i), p_s(l,g-1,i)+0.05]
+                u=u+1;
+            else
+                g=g-1;
+                if g==0
+                    flag_s=1;
+                end
+            end
+        end
+
+    end
+end
+
+x=vuelta_base_s(:,1);
+y=vuelta_base_s(:,2);
+plot(x,y,'*')
+
+legend(p,'dron 1','dron 2','dron 3','dron 4','dron 5','dron 6','dron 7','dron 8','Location','best')
+legend('boxoff')
+xlabel('Tiempo (minutos)')
+ylabel('Waypoint')
